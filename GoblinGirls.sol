@@ -19,7 +19,7 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
     uint256 public tokenPrice = 1 ether;
     bool public hasSaleStarted = false;
 
-    IERC721A public goblinTown = IERC721A(0xd9145CCE52D386f254917e481eB44e9943F39138);
+    IERC721A public goblinTown = IERC721A(0xbCe3781ae7Ca1a5e050Bd9C4c77369867eBc307e);
 
     constructor() ERC721A("Goblin Girls", "GG", 30, 100) {
     }
