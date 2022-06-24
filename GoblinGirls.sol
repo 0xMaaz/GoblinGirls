@@ -11,55 +11,40 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 contract GG is Ownable, ERC721A, ReentrancyGuard {
     string _baseUri = "ipfs://Qmd4pK5w6jZmNmKwbXjBfud7Lm7zvckm8AcGanFGJHL5gM/";
     mapping(address => bool) whitelisted;
-    mapping(address => uint256) purchased;
-    mapping(address => bool) goblinMinted;
-    uint256 private freeMinted = 0;
-    uint256 maxFree = 1000;
+    mapping(address => uint256) public purchased;
+    mapping(address => bool) freeMinted;
+    uint256 maxFree;
 
-    uint256 public tokenPrice = 1 ether;
+    uint256 public tokenPrice;
     bool public hasSaleStarted = false;
 
     IERC721A public goblinTown = IERC721A(0xbCe3781ae7Ca1a5e050Bd9C4c77369867eBc307e);
 
-    constructor() ERC721A("Goblin Girls", "GG", 30, 100) {
+    constructor() ERC721A("Goblin Girls", "GG", 30, 10000) {
+        maxFree = 2;
+        tokenPrice = 0.01 ether;
     }
 
 
-    function reserve(uint256 quantity) external onlyOwner {
+    function reserve(address to, uint256 quantity) external onlyOwner {
         require(quantity + totalSupply() <= collectionSize, "GG: Not enough tokens left for minting");
-        
-        _safeMint(msg.sender, quantity);
+        _safeMint(to, quantity);
     }
 
     function mint(uint256 quantity) external payable {
-        require(msg.value >= tokenPrice * quantity, "GG: Incorrect ETH");
         require(hasSaleStarted, "GG: Cannot mint before sale has started");
         require(quantity + totalSupply() <= collectionSize, "GG: Total supply exceeded");
         require(purchased[msg.sender] + quantity <= 30, "GG: Can not purchase more than 30");
 
+        if(purchased[msg.sender] >= 2) require(msg.value >= tokenPrice * quantity, "GG: Incorrect ETH");
+        else {
+            if(quantity > maxFree) {
+                uint256 memory amountPaid = quantity - maxFree;
+                require(msg.value >= tokenPrice * amountPaid,"GG: Incorrect ETH");
+            }
+        }
         purchased[msg.sender] += quantity;
         _safeMint(msg.sender, quantity);
-    }
-
-    function mintFree() external payable {
-        require(hasSaleStarted, "GG: Cannot mint before sale has started");
-        require(1 + totalSupply() <= collectionSize, "GG: Total supply exceeded");
-        require(freeMinted++ < maxFree, "GG: No more free Goblin Girls available");
-        if(goblinTown.balanceOf(msg.sender) > 0 && !goblinMinted[msg.sender]) {
-            whitelisted[msg.sender] = true;
-        }
-        require(whitelisted[msg.sender] && !goblinMinted[msg.sender], "GG: User is not approved for free mint");
-
-        goblinMinted[msg.sender] = true;
-        whitelisted[msg.sender] = false;
-
-        _safeMint(msg.sender, 1);
-    }
-
-    function addToWl(address[] calldata addresses) external onlyOwner{
-        for(uint i=0; i<addresses.length; i++) {
-            whitelisted[addresses[i]] = true;
-        }
     }
 
     function _baseURI() internal view override returns (string memory) {
@@ -76,6 +61,10 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
 
     function setPrice(uint256 newPrice) external onlyOwner {
         tokenPrice = newPrice;
+    }
+
+    function setMaxFree(uint256 newMax) external onlyOwner {
+        maxFree = newMax;
     }
 
     function withdrawAll() external onlyOwner {
