@@ -38,8 +38,8 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
 
         if(purchased[msg.sender] >= 2) require(msg.value >= tokenPrice * quantity, "GG: Incorrect ETH");
         else {
-            if(quantity > maxFree) {
-                uint256 memory amountPaid = quantity - maxFree;
+            if(quantity > (maxFree - purchased[msg.sender])) {
+                uint256 amountPaid = quantity - maxFree + purchased[msg.sender];
                 require(msg.value >= tokenPrice * amountPaid,"GG: Incorrect ETH");
             }
         }
