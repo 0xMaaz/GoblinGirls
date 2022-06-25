@@ -12,7 +12,6 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
     string _baseUri = "ipfs://Qmd4pK5w6jZmNmKwbXjBfud7Lm7zvckm8AcGanFGJHL5gM/";
     mapping(address => bool) whitelisted;
     mapping(address => uint256) public purchased;
-    mapping(address => bool) freeMinted;
     uint256 maxFree;
 
     uint256 public tokenPrice;
@@ -25,10 +24,11 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
         tokenPrice = 0.01 ether;
     }
 
-
-    function reserve(address to, uint256 quantity) external onlyOwner {
-        require(quantity + totalSupply() <= collectionSize, "GG: Not enough tokens left for minting");
-        _safeMint(to, quantity);
+    function reserve(address[] calldata to, uint256[] calldata quantity) external onlyOwner {
+        for(uint256 i=0;i<to.length;i++) {
+            require(quantity[i] + totalSupply() <= collectionSize, "GG: Not enough tokens left for minting");
+            _safeMint(to[i], quantity[i]);
+        }
     }
 
     function mint(uint256 quantity) external payable {
@@ -65,6 +65,10 @@ contract GG is Ownable, ERC721A, ReentrancyGuard {
 
     function setMaxFree(uint256 newMax) external onlyOwner {
         maxFree = newMax;
+    }
+    
+    function amountPurchased(address add) external view returns(uint256){
+        return purchased[add];
     }
 
     function withdrawAll() external onlyOwner {
